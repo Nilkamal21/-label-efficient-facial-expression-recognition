@@ -1,0 +1,41 @@
+====================================================
+  HAM10000 MASTER SPLIT VERIFICATION REPORT
+====================================================
+
+Random Seed Used: 42
+Input File: data/HAM10000_metadata.csv
+Output Master Split CSV: data/splits/ham10000_master_split.csv
+
+1. OVERALL SPLIT PROPORTIONS:
+   - TRAIN:  7018 images (70.07%) |  5228 lesions (69.99%)
+   - VAL  :  1507 images (15.05%) |  1121 lesions (15.01%)
+   - TEST :  1490 images (14.88%) |  1121 lesions (15.01%)
+   - TOTAL: 10015 images (100.00%) |  7470 lesions (100.00%)
+
+2. ZERO-LEAKAGE VERIFICATION (SET INTERSECTIONS):
+   - Train ∩ Val Lesions Overlap: 0 (Empty set)
+   - Train ∩ Test Lesions Overlap: 0 (Empty set)
+   - Val ∩ Test Lesions Overlap: 0 (Empty set)
+   - Leakage Verification Status: PASSED (ZERO LEAKAGE GUARANTEED)
+
+3. CLASS COUNTS PER SPLIT (dx):
+split  test  train   val
+dx                      
+akiec    45    231    51
+bcc      75    366    73
+bkl     164    761   174
+df       21     80    14
+mel     159    787   167
+nv     1001   4699  1005
+vasc     25     94    23
+
+4. CLASS PERCENTAGES PER SPLIT (%):
+split   test  train    val
+dx                        
+akiec   3.02   3.29   3.38
+bcc     5.03   5.22   4.84
+bkl    11.01  10.84  11.55
+df      1.41   1.14   0.93
+mel    10.67  11.21  11.08
+nv     67.18  66.96  66.69
+vasc    1.68   1.34   1.53

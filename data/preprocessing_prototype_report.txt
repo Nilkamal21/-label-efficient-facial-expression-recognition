@@ -1,0 +1,47 @@
+====================================================
+  PREPROCESSING PROTOTYPE VERIFICATION REPORT
+====================================================
+
+Sample Directory: C:\Users\adhik\OneDrive\Desktop\Label-Efficient Skin Lesion Classification\data\sample_images
+Sample Count Tested: 10
+
+1. BATCH TENSOR VERIFICATION:
+   - Target Batch Shape: [10, 3, 224, 224]
+   - Actual ImageNet Batch Shape: [10, 3, 224, 224]
+   - Actual BiomedCLIP Batch Shape: [10, 3, 224, 224]
+   - Shape Verification Status: PASSED
+
+2. SUMMARY STATISTICS PER CONFIGURATION:
+   Config: Raw Tensors (Unnormalized [0.0, 1.0])
+     - Tensor Shape: [10, 3, 224, 224]
+     - Min Value   : 0.0
+     - Max Value   : 1.0
+     - Mean Value  : 0.7155
+     - Std Value   : 0.1614
+
+   Config: ImageNet Normalization (Models A, B, C)
+     - Tensor Shape: [10, 3, 224, 224]
+     - Min Value   : -2.0357
+     - Max Value   : 2.64
+     - Mean Value  : 1.1774
+     - Std Value   : 0.6913
+
+   Config: BiomedCLIP Normalization (Model D)
+     - Tensor Shape: [10, 3, 224, 224]
+     - Min Value   : -1.7521
+     - Max Value   : 2.1459
+     - Mean Value  : 0.9887
+     - Std Value   : 0.5821
+
+3. INDIVIDUAL SAMPLE PROCESSING STATUS:
+
+   - ISIC_0024693.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0024698.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0025030.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0025964.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0027008.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0027419.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0028155.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0029417.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0030623.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS
+   - ISIC_0031197.jpg | Orig: 600x450   -> Processed: [3, 224, 224] | Status: SUCCESS

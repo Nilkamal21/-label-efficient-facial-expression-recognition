@@ -1,0 +1,22 @@
+====================================================
+  HAM10000 10-SAMPLE IMAGES VERIFICATION REPORT
+====================================================
+
+Source: ISIC Archive Official AWS S3 Bucket
+Destination Directory: data/sample_images/
+
+1. MATCHING METADATA & INTEGRITY CHECKS:
+   - All 10 filenames match image_id in CSV: True
+   - Any files corrupted or unreadable: False
+
+2. INDIVIDUAL IMAGE DETAILS:
+   Image ID: ISIC_0029417 | Class: akiec  | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 30,484 bytes | Unreadable: False
+   Image ID: ISIC_0028155 | Class: bcc    | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 36,291 bytes | Unreadable: False
+   Image ID: ISIC_0027419 | Class: bkl    | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 30,576 bytes | Unreadable: False
+   Image ID: ISIC_0027008 | Class: df     | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 32,052 bytes | Unreadable: False
+   Image ID: ISIC_0025964 | Class: mel    | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 23,729 bytes | Unreadable: False
+   Image ID: ISIC_0024698 | Class: nv     | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 21,498 bytes | Unreadable: False
+   Image ID: ISIC_0031197 | Class: vasc   | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 22,494 bytes | Unreadable: False
+   Image ID: ISIC_0024693 | Class: nv     | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 23,299 bytes | Unreadable: False
+   Image ID: ISIC_0030623 | Class: mel    | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 23,476 bytes | Unreadable: False
+   Image ID: ISIC_0025030 | Class: bkl    | Format: JPEG | Dimensions: 600x450   | Channels: 3 (RGB) | Size: 31,701 bytes | Unreadable: False
