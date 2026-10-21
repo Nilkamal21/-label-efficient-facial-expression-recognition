@@ -28,8 +28,9 @@ Facial Expression Recognition (FER) in real-world scenarios suffers from high an
   7. `6: Neutral` (~20.9%)
 * **Partitioning**:
   * **Master Split**: Official RAF-DB partition (12,271 Train, 3,068 Test) with a stratified 10% validation holdout for model selection.
-  * **Data Fractions**: **100%, 50%, 25%, 10%, 5%, 1%** sampled with stratification across **3 seeds (42, 43, 44)**.
-  * **Total Experiment Grid**: $4 \text{ models} \times 6 \text{ fractions} \times 3 \text{ seeds} = \mathbf{72 \text{ runs}}$.
+  * **Data Fractions**: **100%, 75%, 50%, 25%, 10%, 5%, 1%** sampled with stratification across **3 seeds (42, 43, 44)**.
+  * **Total Experiment Grid**: $4 \text{ models} \times 7 \text{ fractions} \times 3 \text{ seeds} = \mathbf{84 \text{ runs}}$.
+  * **Imbalance Handling**: Stratified sampling enforces a guaranteed minimum representation ($\ge 1$ sample) per class even at 1% data (ensuring minority emotions like *Fear* never drop to zero), paired with dynamic class-weighted CrossEntropyLoss during training.
 
 ---
 
@@ -65,7 +66,7 @@ Because RAF-DB exhibits notable class imbalance (*Happiness* has ~17× more samp
 │   ├── splits/
 │   │   ├── rafdb_master_split.csv             # Fixed Train / Val / Test partition
 │   │   └── fractions/
-│   │       ├── seed_42/                       # train_{100,50,25,10,5,1}.csv
+│   │       ├── seed_42/                       # train_{100,75,50,25,10,5,1}.csv
 │   │       ├── seed_43/
 │   │       ├── seed_44/
 │   │       └── fraction_sampling_summary.csv  # Sample counts per fraction
@@ -86,7 +87,7 @@ Because RAF-DB exhibits notable class imbalance (*Happiness* has ~17× more samp
 ├── scripts/
 │   ├── run_batch_experiments.py               # Sequential batch runner for Kaggle/Colab
 │   ├── run_kaggle_pilot.py                    # GPU VRAM & throughput pilot benchmark
-│   └── generate_rafdb_fractions.py            # Stratified 6-fraction subset generator
+│   └── generate_rafdb_fractions.py            # Stratified 7-fraction subset generator
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -98,8 +99,8 @@ Because RAF-DB exhibits notable class imbalance (*Happiness* has ~17× more samp
 
 ### 1. Installation
 ```bash
-git clone https://github.com/Nilkamal21/label-efficient-skin-lesion-classification.git
-cd label-efficient-skin-lesion-classification
+git clone https://github.com/Nilkamal21/-label-efficient-facial-expression-recognition.git
+cd -label-efficient-facial-expression-recognition
 pip install -r requirements.txt
 ```
 
@@ -115,13 +116,13 @@ The batch execution script (`scripts/run_batch_experiments.py`) is engineered fo
 ### Execution Options:
 
 #### Option A: Run a Predefined Batch (Recommended for Kaggle)
-The 72-run grid is divided into 24 sequential batches of 3 runs (one experimental condition across seeds 42, 43, 44):
+The 84-run grid is divided into 28 sequential batches of 3 runs (one experimental condition across seeds 42, 43, 44):
 ```bash
-# Example: Run Batch 19 (Model D / ArcFace at 100% data across seeds 42, 43, 44)
-python scripts/run_batch_experiments.py --batch 19
+# Example: Run Batch 22 (Model D / ArcFace at 100% data across seeds 42, 43, 44)
+python scripts/run_batch_experiments.py --batch 22
 
-# Example: Run Batch 20 (Model D / ArcFace at 50% data across seeds 42, 43, 44)
-python scripts/run_batch_experiments.py --batch 20
+# Example: Run Batch 23 (Model D / ArcFace at 75% data across seeds 42, 43, 44)
+python scripts/run_batch_experiments.py --batch 23
 ```
 
 #### Option B: Target Specific Experiments by Name
@@ -157,4 +158,4 @@ To download all results from Kaggle without downloading heavy model weights:
 ```bash
 zip -r rafdb_paper_results.zip experiments/ -x "*.pt"
 ```
-*(Total size for all 72 completed experiments: under 5 MB).*
+*(Total size for all 84 completed experiments: under 6 MB).*

@@ -24,7 +24,7 @@ class ExperimentConfig:
     def __init__(
         self,
         model_name='model_a',        # 'model_a', 'model_b', 'model_c', 'model_d'
-        fraction_pct='100%',         # '100%', '50%', '25%', '10%', '5%', '1%'
+        fraction_pct='100%',         # '100%', '75%', '50%', '25%', '10%', '5%', '1%'
         seed=42,                     # 42, 43, 44
         batch_size=32,               # Mini-batch size
         learning_rate=1e-4,          # Learning rate

@@ -42,9 +42,9 @@ KAGGLE_RAFDB_CANDIDATE_PATHS = [
     "/kaggle/input/raf-db"
 ]
 
-# Canonical grid definitions (4 models x 6 fractions x 3 seeds = 72 runs)
+# Canonical grid definitions (4 models x 7 fractions x 3 seeds = 84 runs)
 ALL_MODELS = ['model_a', 'model_b', 'model_c', 'model_d']
-ALL_FRACTIONS = ['100%', '50%', '25%', '10%', '5%', '1%']
+ALL_FRACTIONS = ['100%', '75%', '50%', '25%', '10%', '5%', '1%']
 ALL_SEEDS = [42, 43, 44]
 
 
@@ -270,7 +270,7 @@ def run_batch(experiment_specs, image_dirs=None, epochs=None, batch_size=None, l
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Batch Runner for HAM10000 Research Experiments.")
+    parser = argparse.ArgumentParser(description="Batch Runner for RAF-DB Facial Expression Recognition Research Experiments.")
     parser.add_argument(
         '--experiments',
         nargs='+',
@@ -279,7 +279,7 @@ def main():
     parser.add_argument(
         '--batch',
         type=int,
-        help="Predefined batch number (1 to 32, each batch runs 3 experiments across seeds 42, 43, 44)"
+        help="Predefined batch number (1 to 28, each batch runs 3 experiments across seeds 42, 43, 44)"
     )
     parser.add_argument(
         '--model',

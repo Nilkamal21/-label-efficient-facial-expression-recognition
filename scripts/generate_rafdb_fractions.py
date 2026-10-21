@@ -1,7 +1,7 @@
 """
 Script to generate reproducible master split and stratified training data fractions for RAF-DB.
 
-Target Fractions: 100%, 50%, 25%, 10%, 5%, 1%
+Target Fractions: 100%, 75%, 50%, 25%, 10%, 5%, 1%
 Target Seeds: 42, 43, 44
 
 Handles:
@@ -9,6 +9,7 @@ Handles:
 - Converting RAF-DB 1-based labels (1=Surprise ... 7=Neutral) to 0-based indices and emotion names
 - Fixed Master Validation split from official training set
 - Stratified sampling across all 7 emotion classes
+- Guaranteed minimum samples per class (ensures minority classes like Fear never drop to 0 at 1% or 5%)
 - Zero data leakage into validation or test partitions
 - Outputs CSV files under data/splits/ and data/splits/fractions/seed_{42,43,44}/
 """
@@ -25,8 +26,8 @@ if PROJECT_ROOT not in sys.path:
 
 from src.data.dataset import CLASSES, RAFDB_NUMERIC_MAP
 
-TARGET_FRACTIONS = [1.00, 0.50, 0.25, 0.10, 0.05, 0.01]
-FRACTION_NAMES = ["100", "50", "25", "10", "5", "1"]
+TARGET_FRACTIONS = [1.00, 0.75, 0.50, 0.25, 0.10, 0.05, 0.01]
+FRACTION_NAMES = ["100", "75", "50", "25", "10", "5", "1"]
 SEEDS = [42, 43, 44]
 
 
@@ -54,12 +55,34 @@ def parse_rafdb_label_file(file_path):
     return pd.DataFrame(records)
 
 
+def stratified_sample_with_min(df, frac, seed, min_per_class=1):
+    """
+    Stratified sampling that preserves class proportions while strictly
+    guaranteeing that every class has at least `min_per_class` samples.
+    This prevents minority classes (e.g., Fear with ~2% support in RAF-DB)
+    from having 0 samples at low fractions (1%, 5%).
+    """
+    if frac >= 1.0:
+        return df.copy()
+
+    sampled_subsets = []
+    for label, group in df.groupby('label'):
+        target_n = int(round(len(group) * frac))
+        actual_n = max(min_per_class, target_n)
+        actual_n = min(actual_n, len(group))
+        sample = group.sample(n=actual_n, random_state=seed)
+        sampled_subsets.append(sample)
+
+    combined = pd.concat(sampled_subsets).sample(frac=1.0, random_state=seed).reset_index(drop=True)
+    return combined
+
+
 def create_rafdb_splits(metadata_or_label_path, val_ratio=0.10):
     """
-    Creates master train, val, test split and the 6 training fraction subsets.
+    Creates master train, val, test split and the 7 training fraction subsets.
     """
     print("=" * 70)
-    print("=== GENERATING RAF-DB DATA SPLITS AND 6-FRACTION DATASETS ===")
+    print("=== GENERATING RAF-DB DATA SPLITS AND 7-FRACTION DATASETS ===")
     print("=" * 70)
 
     if metadata_or_label_path.endswith('.txt'):
@@ -100,7 +123,7 @@ def create_rafdb_splits(metadata_or_label_path, val_ratio=0.10):
     print(f"[OK] Master Split saved to {master_csv_path}")
     print(f"     Train: {len(master_train_df)} | Val: {len(master_val_df)} | Test: {len(test_df)}")
 
-    # Generate 6 fractions across 3 seeds
+    # Generate 7 fractions across 3 seeds
     summary_records = []
     fractions_base_dir = os.path.join(splits_dir, 'fractions')
 
@@ -109,26 +132,30 @@ def create_rafdb_splits(metadata_or_label_path, val_ratio=0.10):
         os.makedirs(seed_dir, exist_ok=True)
 
         for frac_float, frac_str in zip(TARGET_FRACTIONS, FRACTION_NAMES):
-            if frac_float == 1.0:
-                subset_df = master_train_df.copy()
-            else:
-                subset_df, _ = train_test_split(
-                    master_train_df,
-                    train_size=frac_float,
-                    stratify=master_train_df['label'],
-                    random_state=seed
-                )
+            subset_df = stratified_sample_with_min(
+                master_train_df,
+                frac=frac_float,
+                seed=seed,
+                min_per_class=1
+            )
 
             subset_csv_path = os.path.join(seed_dir, f"train_{frac_str}.csv")
             subset_df.to_csv(subset_csv_path, index=False)
+
+            # Get per-class breakdown for logging transparency
+            class_counts = subset_df['label'].value_counts().to_dict()
+            min_c = min(class_counts.values())
+            max_c = max(class_counts.values())
 
             summary_records.append({
                 'seed': seed,
                 'fraction_pct': f"{frac_str}%",
                 'image_count': len(subset_df),
+                'min_class_count': min_c,
+                'max_class_count': max_c,
                 'file_path': subset_csv_path
             })
-            print(f"  [Seed {seed}] Fraction {frac_str:>3}%: {len(subset_df)} images saved.")
+            print(f"  [Seed {seed}] Fraction {frac_str:>3}%: {len(subset_df):>5} images (min/max class: {min_c}/{max_c}) saved.")
 
     summary_df = pd.DataFrame(summary_records)
     summary_csv_path = os.path.join(fractions_base_dir, 'fraction_sampling_summary.csv')
