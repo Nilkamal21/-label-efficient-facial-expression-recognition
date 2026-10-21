@@ -1,5 +1,5 @@
 """
-Batch Experiment Execution Script for HAM10000 Research Study.
+Batch Experiment Execution Script for RAF-DB Facial Expression Recognition Research Study.
 
 Executes a specified sequential batch of experiments (e.g., 2–4 runs).
 Features:
@@ -26,47 +26,55 @@ if PROJECT_ROOT not in sys.path:
 from src.config import ExperimentConfig
 from src.training.trainer import run_experiment, is_experiment_completed
 
-# Standard Kaggle HAM10000 mount paths
-KAGGLE_PRIMARY_IMAGE_DIRS = [
-    "/kaggle/input/datasets/kmader/skin-cancer-mnist-ham10000/HAM10000_images_part_1",
-    "/kaggle/input/datasets/kmader/skin-cancer-mnist-ham10000/HAM10000_images_part_2"
-]
-KAGGLE_FALLBACK_IMAGE_DIRS = [
-    "/kaggle/input/skin-cancer-mnist-ham10000/HAM10000_images_part_1",
-    "/kaggle/input/skin-cancer-mnist-ham10000/HAM10000_images_part_2"
+# Standard Kaggle RAF-DB mount paths
+KAGGLE_RAFDB_CANDIDATE_PATHS = [
+    # Aligned images directory (most standard for RAF-DB)
+    "/kaggle/input/raf-db-dataset/basic/Image/aligned",
+    "/kaggle/input/real-world-affective-faces-database/basic/Image/aligned",
+    "/kaggle/input/raf-db/basic/Image/aligned",
+    "/kaggle/input/raf-db-dataset/DATASET/train",
+    "/kaggle/input/raf-db-dataset/DATASET/test",
+    "/kaggle/input/raf-db/DATASET/train",
+    "/kaggle/input/raf-db/DATASET/test",
+    # Parent dataset folders
+    "/kaggle/input/raf-db-dataset",
+    "/kaggle/input/real-world-affective-faces-database",
+    "/kaggle/input/raf-db"
 ]
 
-# Canonical grid definitions (4 models x 8 fractions x 3 seeds = 96 runs)
+# Canonical grid definitions (4 models x 6 fractions x 3 seeds = 72 runs)
 ALL_MODELS = ['model_a', 'model_b', 'model_c', 'model_d']
-ALL_FRACTIONS = ['100%', '75%', '50%', '30%', '20%', '10%', '5%', '1%']
+ALL_FRACTIONS = ['100%', '50%', '25%', '10%', '5%', '1%']
 ALL_SEEDS = [42, 43, 44]
 
 
 def resolve_image_dirs(image_dirs=None):
     """
-    Resolves image directories:
+    Resolves RAF-DB image directories:
     1. Explicit directory argument (str or list)
-    2. Primary Kaggle mount (/kaggle/input/datasets/kmader/...)
-    3. Fallback Kaggle mount (/kaggle/input/skin-cancer-mnist-ham10000/...)
+    2. Auto-detection across known Kaggle RAF-DB mount paths
     """
     if image_dirs:
         if isinstance(image_dirs, str):
             return [image_dirs]
         return list(image_dirs)
 
-    if all(os.path.isdir(d) for d in KAGGLE_PRIMARY_IMAGE_DIRS):
-        return list(KAGGLE_PRIMARY_IMAGE_DIRS)
+    # Search for existing Kaggle directories that contain face images
+    detected = []
+    for p in KAGGLE_RAFDB_CANDIDATE_PATHS:
+        if os.path.isdir(p):
+            # Check if this dir or subdirs has jpg/png images
+            has_imgs = any(f.lower().endswith(('.jpg', '.jpeg', '.png')) for f in os.listdir(p))
+            if has_imgs:
+                detected.append(p)
 
-    if all(os.path.isdir(d) for d in KAGGLE_FALLBACK_IMAGE_DIRS):
-        return list(KAGGLE_FALLBACK_IMAGE_DIRS)
+    if detected:
+        return detected
 
-    missing_desc = "\n".join(f"  - {d}" for d in KAGGLE_PRIMARY_IMAGE_DIRS)
     raise FileNotFoundError(
-        "HAM10000 image directories were not detected:\n"
-        f"{missing_desc}\n\n"
+        "RAF-DB image directories were not detected on Kaggle.\n"
         "Please specify image directories with --image_dirs, e.g.:\n"
-        "  --image_dirs /kaggle/input/datasets/kmader/skin-cancer-mnist-ham10000/HAM10000_images_part_1 "
-        "/kaggle/input/datasets/kmader/skin-cancer-mnist-ham10000/HAM10000_images_part_2\n"
+        "  --image_dirs /kaggle/input/raf-db-dataset/basic/Image/aligned\n"
         "or for local testing:\n"
         "  --image_dirs data/sample_images"
     )
@@ -86,15 +94,29 @@ def validate_environment(image_dirs, experiment_specs):
     for d in image_dirs:
         if not os.path.exists(d) or not os.path.isdir(d):
             raise FileNotFoundError(f"[ERROR] Image directory not found: {d}")
-        jpg_count = sum(1 for f in os.listdir(d) if f.lower().endswith(('.jpg', '.jpeg')))
-        if jpg_count == 0:
-            raise FileNotFoundError(f"[ERROR] No JPG images found in {d}")
-        print(f"  [OK] Image Dir: {d} ({jpg_count} images)")
+        img_count = sum(1 for f in os.listdir(d) if f.lower().endswith(('.jpg', '.jpeg', '.png')))
+        if img_count == 0:
+            raise FileNotFoundError(f"[ERROR] No image files (JPG/PNG) found in {d}")
+        print(f"  [OK] Image Dir: {d} ({img_count} images)")
 
-    # 2. Master split CSV
-    master_split_csv = os.path.join(PROJECT_ROOT, 'data', 'splits', 'ham10000_master_split.csv')
+    # 2. Master split CSV (RAF-DB master split)
+    master_split_csv = os.path.join(PROJECT_ROOT, 'data', 'splits', 'rafdb_master_split.csv')
     if not os.path.isfile(master_split_csv):
-        raise FileNotFoundError(f"[ERROR] Master split CSV missing: {master_split_csv}")
+        # Attempt to auto-generate RAF-DB splits if label file is present on Kaggle
+        from scripts.generate_rafdb_fractions import KAGGLE_CANDIDATE_LABEL_PATHS, create_rafdb_splits
+        found_label = None
+        for p in KAGGLE_CANDIDATE_LABEL_PATHS:
+            if os.path.isfile(p):
+                found_label = p
+                break
+        if found_label:
+            print(f"[INFO] Auto-generating RAF-DB splits from {found_label}...")
+            create_rafdb_splits(found_label)
+        else:
+            raise FileNotFoundError(
+                f"[ERROR] Master split CSV missing: {master_split_csv}\n"
+                f"Please run 'python scripts/generate_rafdb_fractions.py <path_to_list_patition_label.txt>' first."
+            )
     print(f"  [OK] Master Split CSV: {master_split_csv}")
 
     # 3. Fraction CSVs for all requested specs

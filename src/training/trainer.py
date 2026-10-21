@@ -26,7 +26,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from src.data.dataset import HAM10000Dataset, CLASS_TO_IDX
+from src.data.dataset import RAFDBDataset, HAM10000Dataset, CLASS_TO_IDX
 from src.data.transforms import get_transforms
 from src.models.model_a import build_model_a
 from src.models.model_b import build_model_b
@@ -129,11 +129,31 @@ def get_model(model_name, num_classes=7):
         raise ValueError(f"Unknown model_name: {model_name}")
 
 
-def calculate_class_weights():
-    """Calculates inverse class frequency weights normalized to sum to 7.0."""
-    total_samples = 10015
+def calculate_class_weights(dataset=None):
+    """
+    Calculates inverse class frequency weights normalized to sum to 7.0 for RAF-DB.
+    If dataset is provided with samples, computes dynamic weights for the active fraction;
+    otherwise defaults to standard RAF-DB training partition frequencies.
+    """
     num_classes = 7
-    class_counts = [327, 514, 1099, 115, 1113, 6705, 142]
+    if dataset is not None and hasattr(dataset, 'samples') and len(dataset.samples) > 0:
+        counts = [0] * num_classes
+        label_col = getattr(dataset, 'label_col', 'label')
+        for val in dataset.samples[label_col]:
+            try:
+                c_idx = dataset._parse_label(val)
+                if 0 <= c_idx < num_classes:
+                    counts[c_idx] += 1
+            except Exception:
+                pass
+        counts = [max(c, 1) for c in counts]
+        total_samples = sum(counts)
+        class_counts = counts
+    else:
+        # Canonical RAF-DB basic emotion train partition counts (12,271 images)
+        # Surprise: 1290, Fear: 281, Disgust: 717, Happiness: 4772, Sadness: 1982, Anger: 705, Neutral: 2524
+        total_samples = 12271
+        class_counts = [1290, 281, 717, 4772, 1982, 705, 2524]
 
     weights = [total_samples / (num_classes * count) for count in class_counts]
     sum_w = sum(weights)
@@ -268,9 +288,9 @@ def run_experiment(config, image_dirs):
     eval_transform = get_transforms(is_training=False, image_size=config.image_size, mean=config.norm_mean, std=config.norm_std)
 
     # Build Datasets
-    train_dataset = HAM10000Dataset(config.fraction_csv, image_dirs, split='train', transform=train_transform)
-    val_dataset = HAM10000Dataset(config.master_split_csv, image_dirs, split='val', transform=eval_transform)
-    test_dataset = HAM10000Dataset(config.master_split_csv, image_dirs, split='test', transform=eval_transform)
+    train_dataset = RAFDBDataset(config.fraction_csv, image_dirs, split='train', transform=train_transform)
+    val_dataset = RAFDBDataset(config.master_split_csv, image_dirs, split='val', transform=eval_transform)
+    test_dataset = RAFDBDataset(config.master_split_csv, image_dirs, split='test', transform=eval_transform)
 
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, pin_memory=True)
@@ -282,8 +302,8 @@ def run_experiment(config, image_dirs):
     device = torch.device(config.device)
     model = get_model(config.model_name, num_classes=config.num_classes).to(device)
 
-    # Class-Weighted Loss & Optimizer
-    class_weights = calculate_class_weights().to(device)
+    # Class-Weighted Loss & Optimizer (computed dynamically for active fraction or standard RAF-DB)
+    class_weights = calculate_class_weights(train_dataset).to(device)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
 

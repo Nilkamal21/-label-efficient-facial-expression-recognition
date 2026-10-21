@@ -4,7 +4,7 @@ Model C: DINOv2 (Self-Supervised Vision Transformer - ViT-S/14).
 Architecture: Vision Transformer Small with 14x14 patch size (dinov2_vits14)
 Pretrained Weights: Self-Supervised LVD-142M (Meta AI DINOv2)
 Input Shape: [Batch_Size, 3, 224, 224]
-Output Shape: [Batch_Size, 7] (Raw classification logits for HAM10000)
+Output Shape: [Batch_Size, 7] (Raw classification logits for RAF-DB 7 basic emotions)
 """
 
 import torch
@@ -13,7 +13,7 @@ import torch.nn as nn
 
 class DINOv2Classifier(nn.Module):
     """
-    DINOv2 ViT-S/14 classification model for HAM10000 skin lesion classification.
+    DINOv2 ViT-S/14 classification model for RAF-DB facial expression recognition.
     """
     def __init__(self, num_classes=7):
         super().__init__()
@@ -40,7 +40,7 @@ def build_model_c(num_classes=7):
     Factory function to build Model C (DINOv2 ViT-S/14).
     
     Args:
-        num_classes (int): Number of target diagnostic categories (default 7).
+        num_classes (int): Number of target emotion categories (default 7).
         
     Returns:
         torch.nn.Module: DINOv2 ViT-S/14 model with 7-class classification head.

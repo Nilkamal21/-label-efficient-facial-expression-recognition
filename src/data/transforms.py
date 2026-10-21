@@ -1,10 +1,10 @@
 """
-Modular PyTorch Data Transforms for Skin Lesion Classification.
+Modular PyTorch Data Transforms for Facial Expression Recognition (RAF-DB).
 
 Supports:
-- Models A, B, C (EfficientNet-B0, DINOv2): ImageNet normalization
-- Model D (BiomedCLIP): OpenCLIP / BiomedCLIP normalization
-- Training transforms (with light, biologically valid augmentations)
+- Models A, B, C (ResNet/EfficientNet, DINOv2): ImageNet normalization
+- Model D (ArcFace): Standard Face normalization (mean=0.5, std=0.5 -> [-1, 1])
+- Training transforms (face-appropriate augmentations: horizontal flip, mild rotation, color jitter)
 - Validation & Test transforms (deterministic resizing & normalization)
 """
 
@@ -14,16 +14,18 @@ from torchvision import transforms
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
-BIOMEDCLIP_MEAN = [0.48145466, 0.4578275, 0.40821073]
-BIOMEDCLIP_STD = [0.26862954, 0.26130258, 0.27577711]
+# Standard ArcFace / InsightFace Normalization (scales [0, 1] to [-1, 1])
+ARCFACE_MEAN = [0.5, 0.5, 0.5]
+ARCFACE_STD = [0.5, 0.5, 0.5]
 
 
 def get_transforms(is_training=False, image_size=224, mean=None, std=None):
     """
-    Returns torchvision transforms for training or evaluation.
+    Returns torchvision transforms for training or evaluation on facial images.
     
     Args:
-        is_training (bool): If True, includes random flips, rotation, and mild jitter.
+        is_training (bool): If True, applies face-appropriate augmentations (horizontal flip,
+                            mild rotation, color jitter). Excludes vertical flip.
         image_size (int): Target height and width (default 224).
         mean (list): Normalization channel means (defaults to ImageNet).
         std (list): Normalization channel stds (defaults to ImageNet).
@@ -39,11 +41,11 @@ def get_transforms(is_training=False, image_size=224, mean=None, std=None):
     transform_list.append(transforms.Resize((image_size, image_size)))
 
     # 2. Training Data Augmentations (Only applied during training)
+    # Face-appropriate augmentations (horizontal flip, mild rotation, mild color jitter)
     if is_training:
         transform_list.append(transforms.RandomHorizontalFlip(p=0.5))
-        transform_list.append(transforms.RandomVerticalFlip(p=0.5))
-        transform_list.append(transforms.RandomRotation(degrees=20))
-        transform_list.append(transforms.ColorJitter(brightness=0.1, contrast=0.1))
+        transform_list.append(transforms.RandomRotation(degrees=10))
+        transform_list.append(transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1))
 
     # 3. Convert PIL Image to PyTorch Tensor [C, H, W] in range [0.0, 1.0]
     transform_list.append(transforms.ToTensor())

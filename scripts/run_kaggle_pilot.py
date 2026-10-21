@@ -1,7 +1,7 @@
 """
-Stage 9D: Single Kaggle GPU Pilot Run Script.
+Stage 9D: Single Kaggle GPU Pilot Run Script for RAF-DB.
 
-Executes a 3-epoch pilot run of Model D (BiomedCLIP ViT-B/16) on 100% data (Seed 42).
+Executes a 3-epoch pilot run of Model D (ArcFace iResNet-50) on 100% data (Seed 42).
 - Starting batch size: 32 (dynamic fallback to 16/8 if CUDA OOM occurs)
 - Measures peak GPU VRAM allocation & reservation
 - Measures average per-epoch training throughput
@@ -9,8 +9,8 @@ Executes a 3-epoch pilot run of Model D (BiomedCLIP ViT-B/16) on 100% data (Seed
 - Saves stage9d_pilot_vram_report.json
 
 Automatic Kaggle Dataset Resolution:
-- Detects /kaggle/input/datasets/kmader/skin-cancer-mnist-ham10000/ image parts 1 & 2
-- Validates directories, JPG images, and split CSVs before training begins
+- Detects RAF-DB dataset mounted directories on Kaggle
+- Validates directories, images, and split CSVs before training begins
 """
 
 import os
@@ -27,14 +27,16 @@ if PROJECT_ROOT not in sys.path:
 from src.config import ExperimentConfig
 from src.training.trainer import run_experiment, set_seed
 
-# Kaggle HAM10000 dataset paths (Kaggle pilot infrastructure only)
-KAGGLE_PRIMARY_IMAGE_DIRS = [
-    "/kaggle/input/datasets/kmader/skin-cancer-mnist-ham10000/HAM10000_images_part_1",
-    "/kaggle/input/datasets/kmader/skin-cancer-mnist-ham10000/HAM10000_images_part_2"
-]
-KAGGLE_FALLBACK_IMAGE_DIRS = [
-    "/kaggle/input/skin-cancer-mnist-ham10000/HAM10000_images_part_1",
-    "/kaggle/input/skin-cancer-mnist-ham10000/HAM10000_images_part_2"
+# Candidate Kaggle RAF-DB image directories
+KAGGLE_RAFDB_CANDIDATES = [
+    "/kaggle/input/raf-db-dataset/basic/Image/aligned",
+    "/kaggle/input/real-world-affective-faces-database/basic/Image/aligned",
+    "/kaggle/input/raf-db/basic/Image/aligned",
+    "/kaggle/input/raf-db-dataset/DATASET/train",
+    "/kaggle/input/raf-db-dataset/DATASET/test",
+    "/kaggle/input/raf-db-dataset",
+    "/kaggle/input/real-world-affective-faces-database",
+    "/kaggle/input/raf-db"
 ]
 
 
@@ -42,10 +44,8 @@ def resolve_pilot_image_dirs(image_dirs=None):
     """
     Resolves image directories for Stage 9D Kaggle Pilot:
     1. If image_dirs is explicitly passed (str or list), use and normalize it.
-    2. If image_dirs is None, attempt auto-detection of Kaggle mount paths:
-       - Primary: /kaggle/input/datasets/kmader/skin-cancer-mnist-ham10000/HAM10000_images_part_{1,2}
-       - Fallback: /kaggle/input/skin-cancer-mnist-ham10000/HAM10000_images_part_{1,2}
-    3. If neither Kaggle mount exists, raise FileNotFoundError with actionable guidance.
+    2. If image_dirs is None, attempt auto-detection of Kaggle mount paths.
+    3. If none exist, raise FileNotFoundError with actionable guidance.
     """
     if image_dirs is not None:
         if isinstance(image_dirs, str):
@@ -55,22 +55,21 @@ def resolve_pilot_image_dirs(image_dirs=None):
         else:
             raise TypeError(f"image_dirs must be None, str, or list of str, got {type(image_dirs)}")
 
-    # Check primary Kaggle mount path
-    if all(os.path.isdir(d) for d in KAGGLE_PRIMARY_IMAGE_DIRS):
-        return list(KAGGLE_PRIMARY_IMAGE_DIRS)
+    # Check candidates
+    detected = []
+    for p in KAGGLE_RAFDB_CANDIDATES:
+        if os.path.isdir(p):
+            has_imgs = any(f.lower().endswith(('.jpg', '.jpeg', '.png')) for f in os.listdir(p))
+            if has_imgs:
+                detected.append(p)
 
-    # Check fallback Kaggle mount path
-    if all(os.path.isdir(d) for d in KAGGLE_FALLBACK_IMAGE_DIRS):
-        return list(KAGGLE_FALLBACK_IMAGE_DIRS)
+    if detected:
+        return detected
 
-    # Not found on Kaggle and no explicit directories provided
-    missing_desc = "\n".join(f"  - {d}" for d in KAGGLE_PRIMARY_IMAGE_DIRS)
     raise FileNotFoundError(
-        "Kaggle HAM10000 image directories were not detected:\n"
-        f"{missing_desc}\n\n"
-        "Please ensure the dataset 'kmader/skin-cancer-mnist-ham10000' is added to your Kaggle Notebook,\n"
-        "or explicitly pass image_dirs, e.g.:\n"
-        "    run_pilot(image_dirs=['/path/to/part_1', '/path/to/part_2'])\n"
+        "RAF-DB image directories were not detected on Kaggle.\n"
+        "Please specify image directories explicitly, e.g.:\n"
+        "    run_pilot(image_dirs='/kaggle/input/raf-db-dataset/basic/Image/aligned')\n"
         "For local development/testing, pass:\n"
         "    run_pilot(image_dirs='data/sample_images')"
     )
@@ -213,7 +212,7 @@ def run_pilot(image_dirs=None, initial_batch_size=32):
     print("\n" + "=" * 70)
     print("=== PILOT EXPERIMENT RESULTS SUMMARY ===")
     print("=" * 70)
-    print(f"Model Name            : Model D (BiomedCLIP ViT-B/16)")
+    print(f"Model Name            : Model D (ArcFace iResNet-50)")
     print(f"Dataset Fraction      : 100% (Seed 42)")
     print(f"Proposed Batch Size   : {initial_batch_size}")
     print(f"Actual Feasible Batch : {batch_size}")
@@ -230,7 +229,7 @@ def run_pilot(image_dirs=None, initial_batch_size=32):
     # Save Stage 9D Pilot VRAM Report
     report_data = {
         'model_name': 'model_d',
-        'backbone': 'BiomedCLIP ViT-B/16',
+        'backbone': 'ArcFace iResNet-50',
         'fraction_pct': '100%',
         'seed': 42,
         'proposed_batch_size': initial_batch_size,
