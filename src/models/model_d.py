@@ -136,7 +136,12 @@ class IResNet(nn.Module):
         return x
 
 
-ARCFACE_R50_WEIGHT_URL = "https://sota.nizhib.ai/pytorch-insightface/iresnet50-7f187506.pth"
+ARCFACE_R50_WEIGHT_URLS = [
+    # High-reliability HuggingFace CDN mirror
+    "https://huggingface.co/AIRI-Institute/StyleFeatureEditor/resolve/main/pretrained_models/iresnet50-7f187506.pth",
+    # Legacy mirror
+    "https://sota.nizhib.ai/pytorch-insightface/iresnet50-7f187506.pth"
+]
 
 
 class ArcFaceClassifier(nn.Module):
@@ -149,16 +154,24 @@ class ArcFaceClassifier(nn.Module):
         self.backbone = IResNet(IBasicBlock, [3, 4, 14, 3], dropout=0.0, num_features=512)
 
         if pretrained:
-            try:
-                state_dict = torch.hub.load_state_dict_from_url(
-                    ARCFACE_R50_WEIGHT_URL,
-                    progress=True,
-                    map_location='cpu'
-                )
-                self.backbone.load_state_dict(state_dict, strict=False)
-                print("[INFO] Successfully loaded pretrained ArcFace iResNet-50 weights.")
-            except Exception as e:
-                print(f"[WARNING] Could not download ArcFace pretrained weights ({e}). Initializing backbone with random weights.")
+            loaded = False
+            for url in ARCFACE_R50_WEIGHT_URLS:
+                try:
+                    print(f"[INFO] Downloading ArcFace pretrained weights from: {url}")
+                    state_dict = torch.hub.load_state_dict_from_url(
+                        url,
+                        progress=True,
+                        map_location='cpu'
+                    )
+                    self.backbone.load_state_dict(state_dict, strict=False)
+                    print("[INFO] Successfully loaded pretrained ArcFace iResNet-50 weights.")
+                    loaded = True
+                    break
+                except Exception as e:
+                    print(f"[WARNING] Failed downloading from {url}: {e}")
+
+            if not loaded:
+                print("[WARNING] Could not download ArcFace pretrained weights from any source. Initializing with random weights.")
 
         self.embed_dim = 512
         # Classification head for 7 basic emotion classes
