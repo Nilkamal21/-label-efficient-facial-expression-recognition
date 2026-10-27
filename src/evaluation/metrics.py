@@ -138,17 +138,22 @@ def calculate_all_metrics(y_true, y_prob, num_classes=7, n_bins=10):
     # 2. Macro F1-Score
     macro_f1 = float(f1_score(y_true, y_pred, average='macro', zero_division=np.nan))
     
-    # 3. Macro AUROC (Multiclass One-vs-Rest)
-    present_classes = np.unique(y_true)
-    if len(present_classes) == num_classes:
-        macro_auroc = float(roc_auc_score(y_true, y_prob, multi_class='ovr', average='macro'))
-    else:
-        # If some classes are missing in y_true, compute OvR AUROC for present classes only
-        try:
-            # Select probabilities for present classes and normalize
-            macro_auroc = float(roc_auc_score(y_true, y_prob, multi_class='ovr', average='macro', labels=present_classes))
-        except Exception:
-            macro_auroc = np.nan
+    # 3. Macro AUROC (Multiclass One-vs-Rest, computed per-class for robust numerical stability)
+    try:
+        from sklearn.preprocessing import label_binarize
+        y_true_bin = label_binarize(y_true, classes=list(range(num_classes)))
+        if num_classes == 2 and y_true_bin.shape[1] == 1:
+            y_true_bin = np.hstack([1 - y_true_bin, y_true_bin])
+        
+        class_aurocs = []
+        for c in range(num_classes):
+            if c < y_prob.shape[1] and len(np.unique(y_true_bin[:, c])) > 1:
+                auc_c = roc_auc_score(y_true_bin[:, c], y_prob[:, c])
+                class_aurocs.append(auc_c)
+        
+        macro_auroc = float(np.mean(class_aurocs)) if class_aurocs else np.nan
+    except Exception:
+        macro_auroc = np.nan
             
     # 4. Confusion Matrix [K, K]
     cm = confusion_matrix(y_true, y_pred, labels=list(range(num_classes)))
