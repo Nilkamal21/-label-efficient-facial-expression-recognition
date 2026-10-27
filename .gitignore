@@ -3,16 +3,14 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# PyTorch checkpoints and model weights
+# PyTorch checkpoints and model weights (do not push heavy model files to Git)
 *.pt
 *.pth
 *.ckpt
 *.bin
 
-# Experiment output directories
-experiments/
+# Temporary test directories
 experiments_test_temp/
-*.log
 
 # Full dataset images (if downloaded locally or unpacked)
 data/HAM10000_images*
