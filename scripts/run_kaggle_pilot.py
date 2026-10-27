@@ -101,9 +101,22 @@ def validate_pilot_inputs(image_dirs, config):
 
         print(f"  [OK] Image dir: {d} (contains {jpg_count} JPG files)")
 
-    # Verify required split CSVs exist
+    # Verify required split CSVs exist (or auto-generate if label file detected)
     if not os.path.exists(config.master_split_csv) or not os.path.isfile(config.master_split_csv):
-        raise FileNotFoundError(f"[ERROR] Master split CSV not found: {config.master_split_csv}")
+        from scripts.generate_rafdb_fractions import KAGGLE_CANDIDATE_LABEL_PATHS, create_rafdb_splits
+        found_label = None
+        for p in KAGGLE_CANDIDATE_LABEL_PATHS:
+            if os.path.isfile(p):
+                found_label = p
+                break
+        if found_label:
+            print(f"[INFO] Auto-generating RAF-DB splits from {found_label}...")
+            create_rafdb_splits(found_label)
+        else:
+            raise FileNotFoundError(
+                f"[ERROR] Master split CSV not found: {config.master_split_csv}\n"
+                f"Please run 'python scripts/generate_rafdb_fractions.py <path_to_list_patition_label.txt>' first."
+            )
     print(f"  [OK] Master split CSV: {config.master_split_csv}")
 
     if not os.path.exists(config.fraction_csv) or not os.path.isfile(config.fraction_csv):
@@ -115,7 +128,7 @@ def validate_pilot_inputs(image_dirs, config):
 
 def run_pilot(image_dirs=None, initial_batch_size=32):
     print("=" * 70)
-    print("=== STAGE 9D: KAGGLE GPU PILOT RUN (MODEL D BIOMEDCLIP 100% SEED 42) ===")
+    print("=== STAGE 9D: KAGGLE GPU PILOT RUN (MODEL D ARCFACE 100% SEED 42) ===")
     print("=" * 70)
 
     device_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
