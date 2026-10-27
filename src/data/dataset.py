@@ -76,11 +76,11 @@ class RAFDBDataset(Dataset):
         else:
             self.id_col = self.df.columns[0]
 
-        # Determine label column
-        if 'label' in self.df.columns:
-            self.label_col = 'label'
-        elif 'emotion' in self.df.columns:
+        # Determine label column (prefer explicit emotion name string if available)
+        if 'emotion' in self.df.columns:
             self.label_col = 'emotion'
+        elif 'label' in self.df.columns:
+            self.label_col = 'label'
         elif 'dx' in self.df.columns:
             self.label_col = 'dx'
         else:
@@ -142,30 +142,32 @@ class RAFDBDataset(Dataset):
 
     def _parse_label(self, raw_label):
         """Converts raw label (string, 1-based int, or 0-based int) to 0..6 integer."""
-        if isinstance(raw_label, (int, float, torch.Tensor)):
-            val = int(raw_label)
-            if val in RAFDB_NUMERIC_MAP:
-                return RAFDB_NUMERIC_MAP[val]
-            if 0 <= val < len(CLASSES):
-                return val
-            raise ValueError(f"Unrecognized numeric label: {val}")
-
+        # 1. String emotion name lookup (e.g. 'Surprise' -> 0, 'Neutral' -> 6)
         label_str = str(raw_label).strip().capitalize()
         if label_str in CLASS_TO_IDX:
             return CLASS_TO_IDX[label_str]
 
-        # Try case-insensitive lookup
         lower_map = {k.lower(): v for k, v in CLASS_TO_IDX.items()}
         if str(raw_label).strip().lower() in lower_map:
             return lower_map[str(raw_label).strip().lower()]
 
-        # Try int parsing
-        try:
+        # 2. Numeric label parsing
+        if isinstance(raw_label, (int, float, torch.Tensor)):
             val = int(raw_label)
-            if val in RAFDB_NUMERIC_MAP:
-                return RAFDB_NUMERIC_MAP[val]
+            # Already 0-indexed (0 to 6)
             if 0 <= val < len(CLASSES):
                 return val
+            # 1-indexed (1 to 7) raw RAF-DB format
+            if val in RAFDB_NUMERIC_MAP:
+                return RAFDB_NUMERIC_MAP[val]
+            raise ValueError(f"Unrecognized numeric label: {val}")
+
+        try:
+            val = int(raw_label)
+            if 0 <= val < len(CLASSES):
+                return val
+            if val in RAFDB_NUMERIC_MAP:
+                return RAFDB_NUMERIC_MAP[val]
         except ValueError:
             pass
 
