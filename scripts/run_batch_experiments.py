@@ -63,7 +63,6 @@ def resolve_image_dirs(image_dirs=None):
     detected = []
     for p in KAGGLE_RAFDB_CANDIDATE_PATHS:
         if os.path.isdir(p):
-            # Check if this dir or subdirs has jpg/png images
             has_imgs = any(f.lower().endswith(('.jpg', '.jpeg', '.png')) for f in os.listdir(p))
             if has_imgs:
                 detected.append(p)
@@ -71,12 +70,23 @@ def resolve_image_dirs(image_dirs=None):
     if detected:
         return detected
 
+    # Dynamic fallback: scan all folders in /kaggle/input for directories with images
+    if os.path.exists('/kaggle/input'):
+        for root, dirs, files in os.walk('/kaggle/input'):
+            img_count = sum(1 for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png')))
+            if img_count >= 50:
+                print(f"[INFO] Auto-discovered image directory in /kaggle/input: {root} ({img_count} images)")
+                detected.append(root)
+
+    if detected:
+        return detected
+
+    input_contents = os.listdir('/kaggle/input') if os.path.exists('/kaggle/input') else []
     raise FileNotFoundError(
-        "RAF-DB image directories were not detected on Kaggle.\n"
-        "Please specify image directories with --image_dirs, e.g.:\n"
-        "  --image_dirs /kaggle/input/raf-db-dataset/basic/Image/aligned\n"
-        "or for local testing:\n"
-        "  --image_dirs data/sample_images"
+        f"RAF-DB image directories were not detected on Kaggle.\n"
+        f"Contents of /kaggle/input: {input_contents}\n"
+        f"Please specify image directories with --image_dirs, e.g.:\n"
+        f"  --image_dirs /kaggle/input/<dataset-folder-name>/..."
     )
 
 
@@ -109,6 +119,16 @@ def validate_environment(image_dirs, experiment_specs):
             if os.path.isfile(p):
                 found_label = p
                 break
+        if not found_label and os.path.exists('/kaggle/input'):
+            for root, dirs, files in os.walk('/kaggle/input'):
+                for f in files:
+                    if ('patition' in f.lower() or 'partition' in f.lower() or 'emolabel' in f.lower() or 'label' in f.lower()) and f.endswith('.txt'):
+                        found_label = os.path.join(root, f)
+                        print(f"[INFO] Auto-discovered RAF-DB label file at: {found_label}")
+                        break
+                if found_label:
+                    break
+
         if found_label:
             print(f"[INFO] Auto-generating RAF-DB splits from {found_label}...")
             create_rafdb_splits(found_label)

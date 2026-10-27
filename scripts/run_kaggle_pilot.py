@@ -44,8 +44,8 @@ def resolve_pilot_image_dirs(image_dirs=None):
     """
     Resolves image directories for Stage 9D Kaggle Pilot:
     1. If image_dirs is explicitly passed (str or list), use and normalize it.
-    2. If image_dirs is None, attempt auto-detection of Kaggle mount paths.
-    3. If none exist, raise FileNotFoundError with actionable guidance.
+    2. Check candidate standard paths.
+    3. Dynamically scan /kaggle/input for any directory containing image files.
     """
     if image_dirs is not None:
         if isinstance(image_dirs, str):
@@ -55,7 +55,7 @@ def resolve_pilot_image_dirs(image_dirs=None):
         else:
             raise TypeError(f"image_dirs must be None, str, or list of str, got {type(image_dirs)}")
 
-    # Check candidates
+    # Check known candidates
     detected = []
     for p in KAGGLE_RAFDB_CANDIDATES:
         if os.path.isdir(p):
@@ -66,12 +66,24 @@ def resolve_pilot_image_dirs(image_dirs=None):
     if detected:
         return detected
 
+    # Dynamic fallback: scan all folders in /kaggle/input for directories with images
+    if os.path.exists('/kaggle/input'):
+        for root, dirs, files in os.walk('/kaggle/input'):
+            img_count = sum(1 for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png')))
+            if img_count >= 50:
+                print(f"[INFO] Auto-discovered image directory in /kaggle/input: {root} ({img_count} images)")
+                detected.append(root)
+
+    if detected:
+        return detected
+
+    # If nothing detected, show contents of /kaggle/input to help user
+    input_contents = os.listdir('/kaggle/input') if os.path.exists('/kaggle/input') else []
     raise FileNotFoundError(
-        "RAF-DB image directories were not detected on Kaggle.\n"
-        "Please specify image directories explicitly, e.g.:\n"
-        "    run_pilot(image_dirs='/kaggle/input/raf-db-dataset/basic/Image/aligned')\n"
-        "For local development/testing, pass:\n"
-        "    run_pilot(image_dirs='data/sample_images')"
+        f"RAF-DB image directories were not detected on Kaggle.\n"
+        f"Contents of /kaggle/input: {input_contents}\n"
+        f"Please specify image directories with --image_dirs, e.g.:\n"
+        f"    python scripts/run_kaggle_pilot.py --image_dirs /kaggle/input/<dataset-folder-name>/..."
     )
 
 
@@ -109,6 +121,16 @@ def validate_pilot_inputs(image_dirs, config):
             if os.path.isfile(p):
                 found_label = p
                 break
+        if not found_label and os.path.exists('/kaggle/input'):
+            for root, dirs, files in os.walk('/kaggle/input'):
+                for f in files:
+                    if ('patition' in f.lower() or 'partition' in f.lower() or 'emolabel' in f.lower() or 'label' in f.lower()) and f.endswith('.txt'):
+                        found_label = os.path.join(root, f)
+                        print(f"[INFO] Auto-discovered RAF-DB label file at: {found_label}")
+                        break
+                if found_label:
+                    break
+
         if found_label:
             print(f"[INFO] Auto-generating RAF-DB splits from {found_label}...")
             create_rafdb_splits(found_label)
@@ -281,4 +303,10 @@ def run_pilot(image_dirs=None, initial_batch_size=32):
 
 
 if __name__ == '__main__':
-    run_pilot()
+    import argparse
+    parser = argparse.ArgumentParser(description="Stage 9D Pilot Run on Kaggle GPU.")
+    parser.add_argument('--image_dirs', nargs='+', default=None, help="Explicit path(s) to RAF-DB aligned images directory.")
+    parser.add_argument('--batch_size', type=int, default=32, help="Starting batch size (default: 32).")
+    args = parser.parse_args()
+
+    run_pilot(image_dirs=args.image_dirs, initial_batch_size=args.batch_size)

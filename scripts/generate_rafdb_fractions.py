@@ -187,6 +187,16 @@ if __name__ == '__main__':
                 print(f"[INFO] Auto-detected RAF-DB label file at: {label_file}")
                 break
 
+        if not label_file and os.path.exists('/kaggle/input'):
+            for root, dirs, files in os.walk('/kaggle/input'):
+                for f in files:
+                    if ('patition' in f.lower() or 'partition' in f.lower() or 'emolabel' in f.lower() or 'label' in f.lower()) and f.endswith('.txt'):
+                        label_file = os.path.join(root, f)
+                        print(f"[INFO] Auto-discovered RAF-DB label file at: {label_file}")
+                        break
+                if label_file:
+                    break
+
     if label_file and os.path.isfile(label_file):
         create_rafdb_splits(label_file)
     else:
