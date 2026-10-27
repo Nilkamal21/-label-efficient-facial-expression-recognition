@@ -1,0 +1,56 @@
+[2026-10-27 05:37:42] ============================================================
+[2026-10-27 05:37:42] Starting Experiment: Model=model_a | Frac=100% | Seed=42
+[2026-10-27 05:37:42] Device: cuda | Primary Criterion: Best Validation Macro F1
+[2026-10-27 05:37:42] ============================================================
+[2026-10-27 05:37:44] Loaded Datasets: Train=11043 images | Val=1228 images | Test=3068 images
+[2026-10-27 05:53:36] Epoch 01/15 - Train Loss: 1.8034 | Val Loss: 1.8267 | Val BalAcc: 0.2193 | Val Macro F1: 0.1842 [951.1s]
+[2026-10-27 05:53:36]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.1842
+[2026-10-27 05:53:36]    [SAVED LATEST CHECKPOINT] Epoch 01 complete.
+[2026-10-27 05:56:52] Epoch 02/15 - Train Loss: 1.7574 | Val Loss: 1.7053 | Val BalAcc: 0.3040 | Val Macro F1: 0.2587 [195.8s]
+[2026-10-27 05:56:52]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.2587
+[2026-10-27 05:56:53]    [SAVED LATEST CHECKPOINT] Epoch 02 complete.
+[2026-10-27 06:00:09] Epoch 03/15 - Train Loss: 1.6519 | Val Loss: 1.5571 | Val BalAcc: 0.3596 | Val Macro F1: 0.3194 [196.5s]
+[2026-10-27 06:00:10]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.3194
+[2026-10-27 06:00:10]    [SAVED LATEST CHECKPOINT] Epoch 03 complete.
+[2026-10-27 06:03:25] Epoch 04/15 - Train Loss: 1.5143 | Val Loss: 1.4815 | Val BalAcc: 0.4101 | Val Macro F1: 0.3694 [195.3s]
+[2026-10-27 06:03:26]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.3694
+[2026-10-27 06:03:26]    [SAVED LATEST CHECKPOINT] Epoch 04 complete.
+[2026-10-27 06:06:41] Epoch 05/15 - Train Loss: 1.3840 | Val Loss: 1.3528 | Val BalAcc: 0.4802 | Val Macro F1: 0.4437 [195.3s]
+[2026-10-27 06:06:42]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.4437
+[2026-10-27 06:06:42]    [SAVED LATEST CHECKPOINT] Epoch 05 complete.
+[2026-10-27 06:10:00] Epoch 06/15 - Train Loss: 1.2752 | Val Loss: 1.2746 | Val BalAcc: 0.5190 | Val Macro F1: 0.4774 [197.8s]
+[2026-10-27 06:10:00]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.4774
+[2026-10-27 06:10:01]    [SAVED LATEST CHECKPOINT] Epoch 06 complete.
+[2026-10-27 06:13:16] Epoch 07/15 - Train Loss: 1.1835 | Val Loss: 1.1726 | Val BalAcc: 0.5418 | Val Macro F1: 0.5123 [194.9s]
+[2026-10-27 06:13:16]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.5123
+[2026-10-27 06:13:16]    [SAVED LATEST CHECKPOINT] Epoch 07 complete.
+[2026-10-27 06:16:29] Epoch 08/15 - Train Loss: 1.0891 | Val Loss: 1.2293 | Val BalAcc: 0.5448 | Val Macro F1: 0.4783 [193.2s]
+[2026-10-27 06:16:30]    [SAVED LATEST CHECKPOINT] Epoch 08 complete.
+[2026-10-27 06:19:43] Epoch 09/15 - Train Loss: 1.0219 | Val Loss: 1.0562 | Val BalAcc: 0.5931 | Val Macro F1: 0.5670 [193.1s]
+[2026-10-27 06:19:43]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.5670
+[2026-10-27 06:19:44]    [SAVED LATEST CHECKPOINT] Epoch 09 complete.
+[2026-10-27 06:23:01] Epoch 10/15 - Train Loss: 0.9550 | Val Loss: 1.0768 | Val BalAcc: 0.5911 | Val Macro F1: 0.5534 [197.0s]
+[2026-10-27 06:23:01]    [SAVED LATEST CHECKPOINT] Epoch 10 complete.
+[2026-10-27 06:26:16] Epoch 11/15 - Train Loss: 0.9139 | Val Loss: 1.0680 | Val BalAcc: 0.6114 | Val Macro F1: 0.5592 [195.4s]
+[2026-10-27 06:26:17]    [SAVED LATEST CHECKPOINT] Epoch 11 complete.
+[2026-10-27 06:29:30] Epoch 12/15 - Train Loss: 0.8472 | Val Loss: 1.0361 | Val BalAcc: 0.6333 | Val Macro F1: 0.5856 [193.4s]
+[2026-10-27 06:29:31]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.5856
+[2026-10-27 06:29:31]    [SAVED LATEST CHECKPOINT] Epoch 12 complete.
+[2026-10-27 06:32:44] Epoch 13/15 - Train Loss: 0.8035 | Val Loss: 1.0527 | Val BalAcc: 0.5984 | Val Macro F1: 0.5891 [193.4s]
+[2026-10-27 06:32:45]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.5891
+[2026-10-27 06:32:45]    [SAVED LATEST CHECKPOINT] Epoch 13 complete.
+[2026-10-27 06:36:03] Epoch 14/15 - Train Loss: 0.7446 | Val Loss: 0.9859 | Val BalAcc: 0.6538 | Val Macro F1: 0.6186 [197.9s]
+[2026-10-27 06:36:03]    [SAVED BEST CHECKPOINT] Val Macro F1: 0.6186
+[2026-10-27 06:36:04]    [SAVED LATEST CHECKPOINT] Epoch 14 complete.
+[2026-10-27 06:39:21] Epoch 15/15 - Train Loss: 0.7039 | Val Loss: 1.0638 | Val BalAcc: 0.6210 | Val Macro F1: 0.6059 [197.6s]
+[2026-10-27 06:39:22]    [SAVED LATEST CHECKPOINT] Epoch 15 complete.
+[2026-10-27 06:39:22] Training loop concluded in 61.62 minutes.
+[2026-10-27 06:39:22] 
+Loading Best Checkpoint for Final Test Set Evaluation...
+[2026-10-27 06:44:50] === FINAL TEST SET METRICS ===
+[2026-10-27 06:44:50]   Balanced Accuracy : 0.6366
+[2026-10-27 06:44:50]   Macro F1-Score    : 0.6006
+[2026-10-27 06:44:50]   Macro AUROC       : nan
+[2026-10-27 06:44:50]   ECE (10 Bins)     : 0.0615
+[2026-10-27 06:44:50] Experiment outputs successfully saved to /kaggle/working/-label-efficient-facial-expression-recognition/experiments/model_a/fraction_100/seed_42
+[2026-10-27 06:44:50] [COMPLETED] Experiment status marked 'completed'.

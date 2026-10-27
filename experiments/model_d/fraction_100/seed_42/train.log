@@ -1,0 +1,10 @@
+[2026-10-27 05:08:35] ============================================================
+[2026-10-27 05:08:35] Starting Experiment: Model=model_d | Frac=100% | Seed=42
+[2026-10-27 05:08:35] Device: cuda | Primary Criterion: Best Validation Macro F1
+[2026-10-27 05:08:35] ============================================================
+[2026-10-27 05:08:36] Loaded Datasets: Train=11043 images | Val=1228 images | Test=3068 images
+[2026-10-27 05:12:15] ============================================================
+[2026-10-27 05:12:15] Starting Experiment: Model=model_d | Frac=100% | Seed=42
+[2026-10-27 05:12:15] Device: cuda | Primary Criterion: Best Validation Macro F1
+[2026-10-27 05:12:15] ============================================================
+[2026-10-27 05:12:17] Loaded Datasets: Train=11043 images | Val=1228 images | Test=3068 images

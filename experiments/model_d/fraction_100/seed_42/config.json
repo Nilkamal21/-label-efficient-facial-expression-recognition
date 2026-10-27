@@ -1,0 +1,28 @@
+{
+    "model_name": "model_d",
+    "fraction_pct": "100%",
+    "seed": 42,
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "num_epochs": 3,
+    "patience": 5,
+    "image_size": 224,
+    "num_classes": 7,
+    "device": "cuda",
+    "norm_type": "ArcFace",
+    "norm_mean": [
+        0.5,
+        0.5,
+        0.5
+    ],
+    "norm_std": [
+        0.5,
+        0.5,
+        0.5
+    ],
+    "master_split_csv": "/kaggle/working/-label-efficient-facial-expression-recognition/data/splits/rafdb_master_split.csv",
+    "fraction_csv": "/kaggle/working/-label-efficient-facial-expression-recognition/data/splits/fractions/seed_42/train_100.csv",
+    "run_dir": "/kaggle/working/-label-efficient-facial-expression-recognition/experiments/model_d/fraction_100/seed_42",
+    "checkpoint_selection_criterion": "Best Validation Macro F1-Score"
+}
