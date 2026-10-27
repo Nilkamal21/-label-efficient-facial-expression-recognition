@@ -112,30 +112,16 @@ def validate_environment(image_dirs, experiment_specs):
     # 2. Master split CSV (RAF-DB master split)
     master_split_csv = os.path.join(PROJECT_ROOT, 'data', 'splits', 'rafdb_master_split.csv')
     if not os.path.isfile(master_split_csv):
-        # Attempt to auto-generate RAF-DB splits if label file is present on Kaggle
-        from scripts.generate_rafdb_fractions import KAGGLE_CANDIDATE_LABEL_PATHS, create_rafdb_splits
-        found_label = None
-        for p in KAGGLE_CANDIDATE_LABEL_PATHS:
-            if os.path.isfile(p):
-                found_label = p
-                break
-        if not found_label and os.path.exists('/kaggle/input'):
-            for root, dirs, files in os.walk('/kaggle/input'):
-                for f in files:
-                    if ('patition' in f.lower() or 'partition' in f.lower() or 'emolabel' in f.lower() or 'label' in f.lower()) and f.endswith('.txt'):
-                        found_label = os.path.join(root, f)
-                        print(f"[INFO] Auto-discovered RAF-DB label file at: {found_label}")
-                        break
-                if found_label:
-                    break
-
-        if found_label:
-            print(f"[INFO] Auto-generating RAF-DB splits from {found_label}...")
-            create_rafdb_splits(found_label)
+        # Attempt to auto-generate RAF-DB splits if label file or folder structure is present on Kaggle
+        from scripts.generate_rafdb_fractions import auto_detect_rafdb_source, create_rafdb_splits
+        found_source = auto_detect_rafdb_source()
+        if found_source:
+            print(f"[INFO] Auto-generating RAF-DB splits from {found_source}...")
+            create_rafdb_splits(found_source)
         else:
             raise FileNotFoundError(
                 f"[ERROR] Master split CSV missing: {master_split_csv}\n"
-                f"Please run 'python scripts/generate_rafdb_fractions.py <path_to_list_patition_label.txt>' first."
+                f"Please run 'python scripts/generate_rafdb_fractions.py <path_to_list_patition_label.txt_or_dataset_folder>' first."
             )
     print(f"  [OK] Master Split CSV: {master_split_csv}")
 

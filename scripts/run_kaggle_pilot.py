@@ -113,31 +113,17 @@ def validate_pilot_inputs(image_dirs, config):
 
         print(f"  [OK] Image dir: {d} (contains {jpg_count} JPG files)")
 
-    # Verify required split CSVs exist (or auto-generate if label file detected)
+    # Verify required split CSVs exist (or auto-generate if label file/folder detected)
     if not os.path.exists(config.master_split_csv) or not os.path.isfile(config.master_split_csv):
-        from scripts.generate_rafdb_fractions import KAGGLE_CANDIDATE_LABEL_PATHS, create_rafdb_splits
-        found_label = None
-        for p in KAGGLE_CANDIDATE_LABEL_PATHS:
-            if os.path.isfile(p):
-                found_label = p
-                break
-        if not found_label and os.path.exists('/kaggle/input'):
-            for root, dirs, files in os.walk('/kaggle/input'):
-                for f in files:
-                    if ('patition' in f.lower() or 'partition' in f.lower() or 'emolabel' in f.lower() or 'label' in f.lower()) and f.endswith('.txt'):
-                        found_label = os.path.join(root, f)
-                        print(f"[INFO] Auto-discovered RAF-DB label file at: {found_label}")
-                        break
-                if found_label:
-                    break
-
-        if found_label:
-            print(f"[INFO] Auto-generating RAF-DB splits from {found_label}...")
-            create_rafdb_splits(found_label)
+        from scripts.generate_rafdb_fractions import auto_detect_rafdb_source, create_rafdb_splits
+        found_source = auto_detect_rafdb_source()
+        if found_source:
+            print(f"[INFO] Auto-generating RAF-DB splits from {found_source}...")
+            create_rafdb_splits(found_source)
         else:
             raise FileNotFoundError(
                 f"[ERROR] Master split CSV not found: {config.master_split_csv}\n"
-                f"Please run 'python scripts/generate_rafdb_fractions.py <path_to_list_patition_label.txt>' first."
+                f"Please run 'python scripts/generate_rafdb_fractions.py <path_to_list_patition_label.txt_or_dataset_folder>' first."
             )
     print(f"  [OK] Master split CSV: {config.master_split_csv}")
 

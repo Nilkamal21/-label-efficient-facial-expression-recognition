@@ -55,6 +55,39 @@ def parse_rafdb_label_file(file_path):
     return pd.DataFrame(records)
 
 
+def scan_rafdb_from_folders(dataset_root):
+    """
+    Scans directory structures where RAF-DB is organized as:
+    <dataset_root>/train/<1..7>/<image_name>.jpg
+    <dataset_root>/test/<1..7>/<image_name>.jpg
+    """
+    records = []
+    print(f"[INFO] Scanning RAF-DB directory structure at: {dataset_root}")
+    for split_name in ['train', 'test']:
+        for root, dirs, _ in os.walk(dataset_root):
+            if os.path.basename(root).lower() == split_name:
+                for class_folder in dirs:
+                    try:
+                        raw_label = int(class_folder)
+                    except ValueError:
+                        continue
+                    if raw_label not in RAFDB_NUMERIC_MAP:
+                        continue
+                    emotion_idx = RAFDB_NUMERIC_MAP[raw_label]
+                    emotion_name = CLASSES[emotion_idx]
+                    class_dir = os.path.join(root, class_folder)
+                    for fname in os.listdir(class_dir):
+                        if fname.lower().endswith(('.jpg', '.jpeg', '.png')):
+                            records.append({
+                                'image_id': fname,
+                                'label': emotion_idx,
+                                'emotion': emotion_name,
+                                'raw_split': split_name
+                            })
+    print(f"[INFO] Found {len(records)} total images across train/test folders.")
+    return pd.DataFrame(records)
+
+
 def stratified_sample_with_min(df, frac, seed, min_per_class=1):
     """
     Stratified sampling that preserves class proportions while strictly
@@ -80,12 +113,18 @@ def stratified_sample_with_min(df, frac, seed, min_per_class=1):
 def create_rafdb_splits(metadata_or_label_path, val_ratio=0.10):
     """
     Creates master train, val, test split and the 7 training fraction subsets.
+    Supports:
+    1. Directory paths with train/<1..7> and test/<1..7> structure
+    2. list_patition_label.txt files
+    3. Existing metadata CSV files
     """
     print("=" * 70)
     print("=== GENERATING RAF-DB DATA SPLITS AND 7-FRACTION DATASETS ===")
     print("=" * 70)
 
-    if metadata_or_label_path.endswith('.txt'):
+    if os.path.isdir(metadata_or_label_path):
+        df = scan_rafdb_from_folders(metadata_or_label_path)
+    elif str(metadata_or_label_path).endswith('.txt'):
         df = parse_rafdb_label_file(metadata_or_label_path)
     else:
         df = pd.read_csv(metadata_or_label_path)
@@ -175,32 +214,53 @@ KAGGLE_CANDIDATE_LABEL_PATHS = [
 ]
 
 
+def auto_detect_rafdb_source():
+    """
+    Searches for RAF-DB label files or folder structures (DATASET/train and DATASET/test) on Kaggle.
+    Returns path to label file, CSV, or dataset root directory.
+    """
+    for p in KAGGLE_CANDIDATE_LABEL_PATHS:
+        if os.path.isfile(p):
+            return p
+
+    if os.path.exists('/kaggle/input'):
+        # 1. Search for label file
+        for root, dirs, files in os.walk('/kaggle/input'):
+            for f in files:
+                if ('patition' in f.lower() or 'partition' in f.lower() or 'emolabel' in f.lower() or 'label' in f.lower()) and f.endswith('.txt'):
+                    return os.path.join(root, f)
+
+        # 2. Search for directory containing train and test folders with emotion subfolders 1..7
+        for root, dirs, files in os.walk('/kaggle/input'):
+            dir_names_lower = [d.lower() for d in dirs]
+            if 'train' in dir_names_lower and 'test' in dir_names_lower:
+                train_p = os.path.join(root, 'train')
+                test_p = os.path.join(root, 'test')
+                if os.path.exists(os.path.join(train_p, '1')) and os.path.exists(os.path.join(test_p, '1')):
+                    return root
+
+        # 3. Search if DATASET/train exists anywhere
+        for root, dirs, files in os.walk('/kaggle/input'):
+            if os.path.basename(root).lower() == 'dataset':
+                if os.path.isdir(os.path.join(root, 'train')):
+                    return root
+
+    return None
+
+
 if __name__ == '__main__':
-    label_file = None
+    source = None
     if len(sys.argv) > 1:
-        label_file = sys.argv[1]
+        source = sys.argv[1]
     else:
-        # Search candidate Kaggle paths
-        for p in KAGGLE_CANDIDATE_LABEL_PATHS:
-            if os.path.isfile(p):
-                label_file = p
-                print(f"[INFO] Auto-detected RAF-DB label file at: {label_file}")
-                break
+        source = auto_detect_rafdb_source()
+        if source:
+            print(f"[INFO] Auto-detected RAF-DB source at: {source}")
 
-        if not label_file and os.path.exists('/kaggle/input'):
-            for root, dirs, files in os.walk('/kaggle/input'):
-                for f in files:
-                    if ('patition' in f.lower() or 'partition' in f.lower() or 'emolabel' in f.lower() or 'label' in f.lower()) and f.endswith('.txt'):
-                        label_file = os.path.join(root, f)
-                        print(f"[INFO] Auto-discovered RAF-DB label file at: {label_file}")
-                        break
-                if label_file:
-                    break
-
-    if label_file and os.path.isfile(label_file):
-        create_rafdb_splits(label_file)
+    if source and (os.path.isfile(source) or os.path.isdir(source)):
+        create_rafdb_splits(source)
     else:
-        print("Usage: python scripts/generate_rafdb_fractions.py <path_to_list_patition_label.txt_or_csv>")
+        print("Usage: python scripts/generate_rafdb_fractions.py <path_to_list_patition_label.txt_or_dataset_folder>")
         print("Candidate paths searched:")
         for p in KAGGLE_CANDIDATE_LABEL_PATHS:
             print(f"  - {p}")
