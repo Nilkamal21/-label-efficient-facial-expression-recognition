@@ -25,6 +25,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from src.data.dataset import RAFDBDataset, HAM10000Dataset, CLASS_TO_IDX
 from src.data.transforms import get_transforms
@@ -162,13 +163,14 @@ def calculate_class_weights(dataset=None):
     return torch.tensor(normalized_weights, dtype=torch.float32)
 
 
-def train_one_epoch(model, loader, criterion, optimizer, device):
-    """Runs 1 training epoch."""
+def train_one_epoch(model, loader, criterion, optimizer, device, desc="Training"):
+    """Runs 1 training epoch with dynamic batch progress bar."""
     model.train()
     running_loss = 0.0
     total_samples = 0
 
-    for batch in loader:
+    pbar = tqdm(loader, desc=desc, leave=False, dynamic_ncols=True)
+    for batch in pbar:
         images = batch['image'].to(device)
         labels = batch['label'].to(device)
 
@@ -180,12 +182,13 @@ def train_one_epoch(model, loader, criterion, optimizer, device):
 
         running_loss += loss.item() * images.size(0)
         total_samples += images.size(0)
+        pbar.set_postfix({'loss': f"{running_loss / total_samples:.4f}"})
 
     return running_loss / total_samples if total_samples > 0 else 0.0
 
 
-def evaluate(model, loader, criterion, device, num_classes=7):
-    """Evaluates model on validation or test set."""
+def evaluate(model, loader, criterion, device, num_classes=7, desc="Evaluating"):
+    """Evaluates model on validation or test set with dynamic batch progress bar."""
     model.eval()
     running_loss = 0.0
     total_samples = 0
@@ -194,8 +197,9 @@ def evaluate(model, loader, criterion, device, num_classes=7):
     all_probs = []
     all_image_ids = []
 
+    pbar = tqdm(loader, desc=desc, leave=False, dynamic_ncols=True)
     with torch.no_grad():
-        for batch in loader:
+        for batch in pbar:
             images = batch['image'].to(device)
             labels = batch['label'].to(device)
             image_ids = batch['image_id']
@@ -211,6 +215,7 @@ def evaluate(model, loader, criterion, device, num_classes=7):
             all_labels.extend(labels.cpu().numpy())
             all_probs.append(probs.cpu().numpy())
             all_image_ids.extend(image_ids)
+            pbar.set_postfix({'loss': f"{running_loss / total_samples:.4f}"})
 
     avg_loss = running_loss / total_samples if total_samples > 0 else 0.0
 
@@ -346,8 +351,14 @@ def run_experiment(config, image_dirs):
     for epoch in range(start_epoch, config.num_epochs + 1):
         epoch_start = time.time()
 
-        train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device)
-        val_metrics, _, _, _ = evaluate(model, val_loader, criterion, device, num_classes=config.num_classes)
+        train_loss = train_one_epoch(
+            model, train_loader, criterion, optimizer, device,
+            desc=f"Train [{epoch:02d}/{config.num_epochs:02d}]"
+        )
+        val_metrics, _, _, _ = evaluate(
+            model, val_loader, criterion, device, num_classes=config.num_classes,
+            desc=f"Val   [{epoch:02d}/{config.num_epochs:02d}]"
+        )
 
         val_loss = val_metrics['loss']
         val_acc = val_metrics['balanced_accuracy']
@@ -416,7 +427,10 @@ def run_experiment(config, image_dirs):
     best_cp = safe_torch_load(checkpoint_path, map_location=device)
     model.load_state_dict(best_cp['model_state_dict'])
 
-    test_metrics, test_labels, test_probs, test_image_ids = evaluate(model, test_loader, criterion, device, num_classes=config.num_classes)
+    test_metrics, test_labels, test_probs, test_image_ids = evaluate(
+        model, test_loader, criterion, device, num_classes=config.num_classes,
+        desc="Test Evaluation"
+    )
 
     logger.info("=== FINAL TEST SET METRICS ===")
     logger.info(f"  Balanced Accuracy : {test_metrics['balanced_accuracy']:.4f}")
